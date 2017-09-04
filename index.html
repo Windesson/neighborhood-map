@@ -23,16 +23,13 @@
     <aside>
      <div class="row-3" data-bind="visible: shownav">
       <div class="row-3-r1">
-        <input data-bind="value: restaurant" id="search-area-text" type="text" placeholder="Restaurant location">
-        <button data-bind="click: filterRest" id="search-area" value="Filter">
-        <i class="fa fa-filter" aria-hidden="true"></i> Filter
-        </button>
+        <input data-bind="textInput: filterKeyword" id="filter" type="text" autofocus>
       </div>
       <hr>
       <div class="row-3-r2">
-      <ul class="location-list" data-bind="foreach: locationlist">
-        <li class="restaurant-list" >
-         <a href="#" data-bind="text: title, click: $parent.toggleMarker"></a>
+      <ul  data-bind="foreach: filterLocations">
+        <li class="locationslink" >
+         <a href="#" data-bind="text: $data.name, click: $data.triggerMarker"></a>
         </li>
       </ul>
     </div>

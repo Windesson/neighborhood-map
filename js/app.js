@@ -1,7 +1,141 @@
-var map;
-var markers = [];
+var map, infowindow, bounds;
 
-function initMap() {
+/**
+ * Location data modal, it contains location info & marker object
+ * @class
+ * @property {string} name Location title
+ * @property {number} lat Geo latitude value
+ * @property {number} lng Geo longtitude value
+ * @property {object} marker GMap marker object
+ */
+class Location {
+  constructor(loc) {
+    this.name = loc.name;
+    this.lat = loc.location.lat;
+    this.lng = loc.location.lng;
+	this.id = loc.id;
+    this.marker = this.createMarker(loc);
+  }
+
+  createMarker(loc) {
+    let latLng = new google.maps.LatLng(this.lat, this.lng);
+    let marker = new google.maps.Marker({
+      map: map,
+      title: this.name,
+      position: latLng,
+      animation: google.maps.Animation.DROP
+    });
+
+    google.maps.event.addListener(marker, 'click', () => {
+      marker.setAnimation(google.maps.Animation.BOUNCE);
+      setTimeout(() => {
+        marker.setAnimation(null);
+      }, 1400);
+      
+      infowindow.setContent('<div>' + this.name +'</div>'+
+                           '<div> Searching Zomato .... </div>');
+						   
+      let zomatoRequestTimeout = setTimeout(function(){
+        infowindow.setContent('<div>' + this.name +'</div>'+
+                           '<div> Zomato timeout.</div>');
+       }, 8000 ); // after 8 sec change the text
+   
+         // call Zomato to get info about this restaurant
+      $.ajax({
+        url: "https://developers.zomato.com/api/v2.1/restaurant?res_id="+this.id,      
+		headers: {
+          'user-key': "cf646db519cb2afbe5e5218c576f44a1",
+       },
+	  }).done((data) => {
+         // successful
+		 let address = data.location.address || 'No location available';
+		 let rating  = data.user_rating.aggregate_rating  || 'No rating available';
+		 let url = data.menu_url || 'No menu available';
+		 
+        infowindow.setContent('<div>'+ this.name + '</div>'+
+                              '<div>'+ address +'</div>'+
+                              '<div>Rating '+ rating +'</div>'+
+                              '<div id="menu"> <a href="'+ url +'">menu</a></div>'
+                              );
+
+       clearTimeout(zomatoRequestTimeout);
+      }).fail((jqXHR, textStatus) => {
+        // error handling
+        infowindow.setContent('<div>' + this.name +'</div>'+
+                              '<div> Zomato failed to loaded.</div>');
+      });
+       
+	   infowindow.open(map, marker); 
+	  
+    }); //.event
+    
+    // extend map bound object to cover the marker
+    bounds.extend(latLng);
+    
+    return marker;
+  }; //.createMarker
+
+  triggerMarker(loc) {
+    google.maps.event.trigger(loc.marker, 'click');
+  }
+}; //.Location
+
+class ViewModel {
+  constructor() {
+    this.filterKeyword = ko.observable('');
+    this.locations = ko.observableArray();
+    this.shownav = ko.observable(true);	
+    this.navtitle = ko.observable("Hide Navegation");	
+    // Create Location objects
+    mockLocationData.forEach((loc) => {
+      this.locations.push(new Location(loc));
+    });
+	
+	// set map view to cover all markers
+    map.fitBounds(bounds);
+
+    /**
+      * Filter function, return filtered list by
+      * matching with user's keyword and 
+      * show / hide markers accordingly
+      */
+    this.filterLocations = ko.computed(() => {
+      if (!this.filterKeyword() || this.filterKeyword().trim() === '') {
+        // No input found, return all locations
+        this.locations().forEach((loc) => {
+          loc.marker.setVisible(true);
+        })
+        map.fitBounds(bounds);
+
+        return this.locations();
+      } else {
+        // input found, match keyword to filter
+        return ko.utils.arrayFilter(this.locations(), (loc) => {
+          let isMatch = loc.name.toLowerCase().indexOf(this.filterKeyword().toLowerCase()) !== -1;
+          // show or hide the marker
+          loc.marker.setVisible(isMatch);        
+          return isMatch;
+        });
+      } //.conditional
+    }); //.filterLocations
+	
+  }//.constructor
+
+  // this function toggle the nav bar ON/OFF
+  togglenav() {
+    this.shownav(!this.shownav());
+    if(this.shownav()){
+      this.navtitle("Hide Navegation");
+    }
+    else {
+      this.navtitle("Show Navegation");
+    }
+  };  //.togglenav
+  
+  
+};
+
+initMap = () => {
   // Constructor creates a new map - only center and zoom are required.
   map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: 32.7889440000, lng: -79.9469090000},
@@ -10,208 +144,20 @@ function initMap() {
     mapTypeControlOptions: {
         style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
         position: google.maps.ControlPosition.TOP_CENTER
-    }
+    },
+	zoomControl: true,
+    zoomControlOptions: {
+      position: google.maps.ControlPosition.RIGHT_TOP,
+    },
+    scaleControl: true,
+    streetViewControl: true,
+    streetViewControlOptions: {
+    position: google.maps.ControlPosition.RIGHT_TOP
+    },
+    fullscreenControl: true
   });
-
-  var largeInfowindow = new google.maps.InfoWindow();
-  var bounds = new google.maps.LatLngBounds();
-
-  // The following group uses the location array to create an array
-  // of markers on initialize.
-  for (var i = 0; i < locations.length; i++) {
-    // Get the position from the location array.
-    var position = locations[i].location;
-    var title = locations[i].title;
-    var id = locations[i].id;
-    // Create a marker per location, and put into markers array.
-    var marker = new google.maps.Marker({
-      map: map,
-      position: position,
-      title: title,
-      animation: google.maps.Animation.DROP,
-      id: id
-    });
-    // Push the marker to our array of markers.
-    markers.push(marker);
-    // Create an onclick event to open an infowindow at each marker.
-    marker.addListener('click', handler_InfoWindow);
-
-    bounds.extend(markers[i].position);
-  }
-  // next 3 function handles Error:W083 Don't make functions within a loop.
-  function handler_InfoWindow() {
-     populateInfoWindow(this, largeInfowindow);
-	 
-	 for (var i = 0; i < markers.length; i++) {
-	     if (this != markers[i]) {
-	          markers[i].setAnimation(null);
-		 }
-	 }
-	 
-	 if (this.getAnimation() !== null) {
-         this.setAnimation(null);
-     }
-     else {
-          this.setAnimation(google.maps.Animation.BOUNCE);
-     }
-  }
-
-  // Extend the boundaries of the map for each marker
-  //map.fitBounds(bounds);
-
-  //Resize Function
-  google.maps.event.addDomListener(window, "resize", function() {
-	var center = map.getCenter();
-	google.maps.event.trigger(map, "resize");
-	map.setCenter(center);
-   });
+  
+  infowindow = new google.maps.InfoWindow();
+  bounds = new google.maps.LatLngBounds();
+  ko.applyBindings(new ViewModel());
 }
-
-// This function populates the infowindow when the marker is clicked.
-function populateInfoWindow(marker, infowindow) {
-
-   // Check to make sure the infowindow is not already opened on this marker.
-  if (infowindow.marker != marker) {
-    // Clear the infowindow content to give the streetview time to load.
-   infowindow.setContent('');
-   infowindow.marker = marker;
-   // Make sure the marker property is cleared if the infowindow is closed.
-   infowindow.addListener('closeclick', function() {
-    infowindow.marker = null;
-   });
-   // set default
-   infowindow.setContent('<div>' + marker.title +'</div>'+
-                         '<div> searching ... </div>');
-   var urlzomato = "https://developers.zomato.com/api/v2.1/restaurant?res_id="+marker.id;
-   // Using jQuery
-   var zomatoRequestTimeout = setTimeout(function(){
-     infowindow.setContent('<div>' + marker.title +'</div>'+
-                           '<div> Zomato timeout.</div>');
-   }, 8000 ); // after 8 sec change the text
-
-   // call Zomato to get info about this restaurant
-   $.ajax({
-      url: urlzomato,
-      headers: {
-          'user-key': "cf646db519cb2afbe5e5218c576f44a1",
-      },
-	  }).done(function (data) {
-         // successful
-		 console.log(data);
-		 address = data.location.address || 'No location available';
-		 rating  = data.user_rating.aggregate_rating  || 'No rating available';
-		 url = data.menu_url || 'No menu available';
-		 
-        infowindow.setContent('<div>'+ marker.title + '</div>'+
-                              '<div>'+ address +'</div>'+
-                              '<div>Rating '+ rating +'</div>'+
-                              '<div id="menu"> <a href="'+ url +'">menu</a></div>'
-                              );
-
-       clearTimeout(zomatoRequestTimeout);
-      }).fail(function (jqXHR, textStatus) {
-        // error handling
-        infowindow.setContent('<div>' + marker.title +'</div>'+
-                              '<div> Zomato failed to loaded.</div>');
-    });
-   infowindow.open(map, marker);
- }
-}
-
-
-// This function will toggle the clicked marker
-function toggleBounce(clickedMarker) {
-  marker = null;
-  for (var i = 0; i < markers.length; i++) {
-
-	 if(clickedMarker.id == markers[i].id) {
-	    // found clicked restaurant
-        marker = markers[i];
-      }
-	  else {
-	     // make sure only one marker is animated at the time
-		 markers[i].setAnimation(null);
-	  }
-  }
-  if(marker !== null ){
-     // do something with found restaurant
-     if (marker.getAnimation() !== null) {
-         marker.setAnimation(null);
-     }
-     else {
-          google.maps.event.trigger(marker, 'click');
-     }
-  }
-}
-
-
-// This function will loop through the listings and hide them all.
-function hideMarkers() {
-  for (var i = 0; i < markers.length; i++) {
-    markers[i].setMap(null);
-  }
-}
-
-// This function will loop through the listings and display them all.
-function displayMarkers(locationlist) {
-  hideMarkers();
-  locationlist().forEach(function(location){
-    //console.log(location['title'])
-    for (var i = 0; i < markers.length; i++) {
-      if(markers[i].id == location.id){
-        markers[i].setMap(map);
-      }
-    }
-  });
-}
-
-// Asynchronous Data Usage fallback error handling method.
-function myonError() {
-  alert("Sorry google maps could not be loaded.");
-}
-
-var ViewModel = function() {
-    // self maps to the view-model
-    var self = this;
-    self.navtitle = ko.observable("Hide Navegation");
-    self.shownav = ko.observable(true);
-    self.restaurant = ko.observable("");
-    self.locationlist = ko.observableArray([]);
-    self.newslist = ko.observableArray([]);
-
-    locations.forEach(function(location){
-      self.locationlist.push(location);
-    });
-
-  // this function toggle the nav bar ON/OFF
-  self.togglenav = function() {
-    self.shownav(!self.shownav());
-    if(self.shownav()){
-      self.navtitle("Hide Navegation");
-    }
-    else {
-      self.navtitle("Show Navegation");
-    }
-  };
-
-  // this function toggle marker upon clicked
-  self.toggleMarker = function(clickedMarker) {
-       toggleBounce(clickedMarker);
-  };
-
-  // this function filter the list of restaurants
-  self.filterRest = function(){
-    self.locationlist([]);
-    locations.forEach(function(location){
-	ltlower = location.title.toLowerCase();
-	rlower =  self.restaurant().toLowerCase();
-    if(ltlower.indexOf(rlower) !== -1 ){
-        self.locationlist.push(location);
-    }
-    });
-       displayMarkers(self.locationlist);
-  };
-
-};
-
-ko.applyBindings(new ViewModel());

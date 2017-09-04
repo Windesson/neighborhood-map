@@ -8,7 +8,7 @@ body {
  padding: 0;
 }
 
-.restaurant-list > a {
+.locationslink > a {
   text-decoration: none;
   display: inline-block;
   max-width: 250px;
@@ -17,6 +17,7 @@ body {
   white-space: nowrap;
   vertical-align: top;
   color: #c39f9f;
+  width: 70%;
 }
 
 .row-1 > a {
