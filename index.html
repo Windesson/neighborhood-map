@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>Neighborhood Map</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/lib/font-awesome-4.7.0/css/font-awesome.min.css">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  </head>
+
+  <body class="container" >
+    <header>
+     <div class="row-1">
+      <a data-bind='click: togglenav, attr: {title: navtitle}' id="nav-toggle" href="#">&#9776;</a>
+     </div>
+    </header>
+
+    <section>
+      <div class="row-2" id="map"></div>
+    </section>
+
+    <aside>
+     <div class="row-3" data-bind="visible: shownav">
+      <div class="row-3-r1">
+        <input data-bind="value: restaurant" id="search-area-text" type="text" placeholder="Restaurant location">
+        <button data-bind="click: filterRest" id="search-area" value="Filter">
+        <i class="fa fa-filter" aria-hidden="true"></i> Filter
+        </button>
+      </div>
+      <hr>
+      <div class="row-3-r2">
+      <ul class="location-list" data-bind="foreach: locationlist">
+        <li class="restaurant-list" >
+         <a href="#" data-bind="text: title, click: $parent.toggleMarker"></a>
+        </li>
+      </ul>
+    </div>
+	</div>
+    </aside>
+
+    <script src="js/lib/knockout-3.2.0.js"></script>
+    <script src="js/lib/jquery.min.js"></script>
+    <script type="text/javascript" src="js/location.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+    <script onerror="myonError()" async defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAsHSfxHn__5lfZRZkBngsNKIjCBPba2vI&v=3&callback=initMap">
+    </script>
+
+  </body>
+</html>

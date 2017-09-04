@@ -1,0 +1,79 @@
+html,
+body {
+ font-family: Arial, sans-serif;
+ height: 100%;
+ width: 100%;
+ display: block;
+ margin: 0;
+ padding: 0;
+}
+
+.restaurant-list > a {
+  text-decoration: none;
+  display: inline-block;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: top;
+  color: #c39f9f;
+}
+
+.row-1 > a {
+  color: blue;
+  text-decoration: none;
+}
+
+ul {
+  list-style-type: none;
+  list-style-position: inside;
+  padding-left: 5px;
+  overflow: hidden;
+}
+
+#map {
+  overflow: hidden;
+  height: 100%;
+  left: 0px;
+  position: absolute;
+  right: 0px;
+}
+
+#nav-toggle {
+  font-size: 30px;
+}
+
+#search-area-text {
+  width: 70%;
+}
+
+#search-area {
+  width: 24%;
+}
+
+input {
+    font-size: 16px;
+    border-width: 2px;
+}
+
+.row-3 {
+  background: #211414;
+  border: 1px solid #211414;
+  height: 100%;
+  line-height: 35px;
+  text-align: left;
+  position: absolute;
+  padding-left: 5px;
+}
+
+.row-1 {
+  background-color: black;
+  padding: 16px 16px;
+}
+
+h1 {
+    color: #525454;
+    font-size: 22px;
+    margin: 0 0 10px 0;
+    text-align: center;
+}
