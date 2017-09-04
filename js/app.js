@@ -10,14 +10,18 @@ var map, infowindow, bounds;
  */
 class Location {
   constructor(loc) {
-    this.name = loc.name;
-    this.lat = loc.location.lat;
-    this.lng = loc.location.lng;
-	this.id = loc.id;
-    this.marker = this.createMarker(loc);
+    this.name = loc.restaurant.name || 'No name available';
+    this.lat = loc.restaurant.location.latitude || 'No lat available';
+    this.lng = loc.restaurant.location.longitude || 'No lng available';
+	this.rating  = loc.restaurant.user_rating.aggregate_rating || 'No rating available';
+	this.address = loc.restaurant.location.address || 'No location available';
+	this.id = loc.restaurant.id || 'ID not available';
+	this.url = loc.restaurant.menu_url || 'No menu available'
+	this.cuisines = loc.restaurant.cuisines || 'No cuisines available'
+    this.marker = this.createMarker();
   }
 
-  createMarker(loc) {
+  createMarker() {
     let latLng = new google.maps.LatLng(this.lat, this.lng);
     let marker = new google.maps.Marker({
       map: map,
@@ -32,39 +36,13 @@ class Location {
         marker.setAnimation(null);
       }, 1400);
       
-      infowindow.setContent('<div>' + this.name +'</div>'+
-                           '<div> Searching Zomato .... </div>');
-						   
-      let zomatoRequestTimeout = setTimeout(function(){
-        infowindow.setContent('<div>' + this.name +'</div>'+
-                           '<div> Zomato timeout.</div>');
-       }, 8000 ); // after 8 sec change the text
-   
-         // call Zomato to get info about this restaurant
-      $.ajax({
-        url: "https://developers.zomato.com/api/v2.1/restaurant?res_id="+this.id,      
-		headers: {
-          'user-key': "cf646db519cb2afbe5e5218c576f44a1",
-       },
-	  }).done((data) => {
-         // successful
-		 let address = data.location.address || 'No location available';
-		 let rating  = data.user_rating.aggregate_rating  || 'No rating available';
-		 let url = data.menu_url || 'No menu available';
-		 
-        infowindow.setContent('<div>'+ this.name + '</div>'+
-                              '<div>'+ address +'</div>'+
-                              '<div>Rating '+ rating +'</div>'+
-                              '<div id="menu"> <a href="'+ url +'">menu</a></div>'
-                              );
-
-       clearTimeout(zomatoRequestTimeout);
-      }).fail((jqXHR, textStatus) => {
-        // error handling
-        infowindow.setContent('<div>' + this.name +'</div>'+
-                              '<div> Zomato failed to loaded.</div>');
-      });
-       
+	  infowindow.setContent('<div>'+ this.name + '</div>'+
+                            '<div>'+ this.address +'</div>'+
+                            '<div>Rating '+ this.rating +'</div>'+
+							'<div>Cuisines '+ this.cuisines +'</div>'+
+                            '<div id="menu"> <a href="'+ this.url +'">menu</a></div>'
+                            );						   
+         
 	   infowindow.open(map, marker); 
 	  
     }); //.event
@@ -87,9 +65,34 @@ class ViewModel {
     this.shownav = ko.observable(true);	
     this.navtitle = ko.observable("Hide Navegation");	
     // Create Location objects
-    mockLocationData.forEach((loc) => {
-      this.locations.push(new Location(loc));
-    });
+    //mockLocationData.forEach((loc) => {
+    //  this.locations.push(new Location(loc));
+    //});
+	
+	let zomatoRequestTimeout = setTimeout(function(){
+        alert("Zomato timeout.")
+       }, 60000 ); // after 8 sec change the text
+	
+	// call Zomato to get info about this restaurant
+    $.ajax({
+      url: "https://developers.zomato.com/api/v2.1/search?entity_id=1105&entity_type=city&count=20&sort=rating",      
+	  headers: {
+		  'user-key': "cf646db519cb2afbe5e5218c576f44a1",
+       },
+	  }).done((data) => {
+         // successful
+         // Create Location objects
+		
+         for(var i=0; i < data.restaurants.length; i++ ){
+           this.locations.push(new Location(data.restaurants[i]));
+         };
+
+       clearTimeout(zomatoRequestTimeout);
+      }).fail((jqXHR, textStatus) => {
+        // error handling
+
+      });
+	
 	
 	// set map view to cover all markers
     map.fitBounds(bounds);
