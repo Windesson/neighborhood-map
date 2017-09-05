@@ -4,8 +4,7 @@
   <head>
     <title>Neighborhood Map</title>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="css/app.css">
-    <link rel="stylesheet" href="css/lib/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/app.css')}}">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
   </head>
 
@@ -36,10 +35,9 @@
 	</div>
     </aside>
 
-    <script src="js/lib/knockout-3.2.0.js"></script>
-    <script src="js/lib/jquery.min.js"></script>
-    <script type="text/javascript" src="js/location.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
+    <script src="{{url_for('static',filename='js/knockout-3.2.0.js')}}"></script>
+    <script src="{{url_for('static',filename='js/jquery.min.js')}}"></script>
+    <script type="text/javascript" src="{{url_for('static',filename='js/app.js')}}"></script>
     <script onerror="myonError()" async defer
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAsHSfxHn__5lfZRZkBngsNKIjCBPba2vI&v=3&callback=initMap">
     </script>

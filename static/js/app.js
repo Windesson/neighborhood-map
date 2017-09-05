@@ -75,7 +75,7 @@ class ViewModel {
 	
 	// call Zomato to get info about this restaurant
     $.ajax({
-      url: "https://developers.zomato.com/api/v2.1/search?entity_id=1105&entity_type=city&count=20&sort=rating",      
+      url: "https://developers.zomato.com/api/v2.1/search?entity_id=1105&entity_type=city&count=10&sort=rating",      
 	  headers: {
 		  'user-key': "cf646db519cb2afbe5e5218c576f44a1",
        },
